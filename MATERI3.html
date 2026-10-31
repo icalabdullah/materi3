@@ -1420,5 +1420,63 @@
         // Initialize App
         updateUI();
     </script>
+    <script>
+    // 1. TEMPELKAN URL WEB APP GOOGLE SCRIPT ANDA DI SINI
+    const GOOGLE_SCRIPT_URL = "URL_WEB_APP_ANDA_DISINI";
+
+    async function submitJawabanLKPD() {
+        // Ambil data dari form identitas awal
+        const kelompok = document.getElementById('student-group').value || "Belum diisi";
+        const nama = document.getElementById('student-name').value || "Belum diisi";
+
+        // Ambil secara otomatis semua isian textarea di dalam LKPD
+        const textareas = document.querySelectorAll('#lkpd-form textarea');
+        const jawabanArray = Array.from(textareas).map(ta => ta.value.trim());
+
+        // Validasi simpel sebelum submit
+        if (nama === "Belum diisi" || kelompok === "Belum diisi") {
+            alert("Kelompok dan Nama tidak boleh kosong!");
+            return;
+        }
+
+        // Tampilkan efek loading (View 3 di HTML Anda)
+        document.getElementById('lkpd-tasks-view').classList.add('hidden');
+        document.getElementById('lkpd-grading-view').classList.remove('hidden');
+
+        // Susun struktur data JSON
+        const payload = {
+            kelompok: kelompok,
+            nama: nama,
+            jawaban: jawabanArray
+        };
+
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                // Trik CORS: Gunakan text/plain agar GAS tidak memblokir preflight request dari GitHub Pages
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // Sembunyikan loading, tampilkan notifikasi sukses
+                document.getElementById('lkpd-grading-view').classList.add('hidden');
+                document.getElementById('lkpd-success-view').classList.remove('hidden');
+            } else {
+                alert("Gagal menyimpan data: " + result.message);
+                // Kembalikan ke halaman soal
+                document.getElementById('lkpd-grading-view').classList.add('hidden');
+                document.getElementById('lkpd-tasks-view').classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error("Error submit data:", error);
+            alert("Kesalahan jaringan. Gagal mengirim data ke server.");
+            document.getElementById('lkpd-grading-view').classList.add('hidden');
+            document.getElementById('lkpd-tasks-view').classList.remove('hidden');
+        }
+    }
+</script>
 </body>
 </html>
